@@ -1,0 +1,13 @@
+[Unit]
+Description=Run tokoLights 3d printer illumination daemon
+After=multi-user.target
+ 
+[Service]
+Type=simple
+ExecStart=/usr/bin/python /usr/local/scripts/tokoLights/tokoLights.py
+Restart=on-abort
+User=pi
+ 
+[Install]
+WantedBy=multi-user.target
+
