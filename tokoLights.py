@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 ###################################################
 # 
-# this script allows to sync the illumination of a 3d printer controlled by octoprint
+# this script helps to sync the illumination of a 3d printer controlled by octoprint
 # with led strips controlled by an ESP8266 mcu. 
 # 
-# run - demonized or from console - 
+# run - daemonized or from console - 
 # 
-#
-# 
-# 
+# https://github.com/planetar/tokoLights-daemon/blob/master/tokoLights.py
+# (C) 2019, Daniel Planets  planetar@magisterludi.de
+# version# in row 62
 
 
-import paho.mqtt.client as mqtt #import the client1
+import paho.mqtt.client as mqtt 
 import time
 import ConfigParser
 import string
@@ -59,7 +59,7 @@ class controllerClass(object):
         self.printerState="idle"
         self.tim = Timer(5, self.initialTimeout)
         self.tim.start()
-        self.version="0.1.2"
+        self.version="0.1.3"
         self.versionState="alpha"
           
     def initVars(self):
@@ -171,6 +171,11 @@ class controllerClass(object):
             self.setStrip1(60)
             self.setRing('Starting')
 
+        elif val=='Paused':
+            self.setStrip0(150)
+            self.setStrip1(150)
+            self.setRing('Starting')
+
         elif val=='Printing':
             self.setStrip0(200)
             self.setStrip1(100)
@@ -189,7 +194,7 @@ class controllerClass(object):
             self.setStrip0(150)
             self.setStrip1(70)
             self.setRing('Finishing')
-            # auch eine Stelle, wo shutdown aufgerufen werden kann, falls printDone nicht erscheint
+            # a logical place to start the printer shutOff
             self.doShutOffPrinter()
 
              
@@ -200,8 +205,8 @@ class controllerClass(object):
         
         if val=='Progressing':
             # Operational means, the printer is on and idle. No Progressing
+            # even when octoPrint sends such a message.
             if self.printerState=='Operational' or self.printerState=='Offline':
-                #gesangverein=runtime_error
                 return
             if not self.printerState==val:
                 self.doPrinterState(val)
@@ -252,7 +257,6 @@ class controllerClass(object):
             self.highToolTemp = self.actualToolTemp
             self.echo("a new tool high: {}".format(val) )
         # if heating, percent reached? (0 -> 100) and 0 ~ lowTemp
-        # currently the values are negative when cooling
         if self.phase=='toolHeating' or self.phase=='bedHeatingDone':
             perc = (self.actualToolTemp-self.lowTemp)*100 / (self.targetToolTemp-self.lowTemp)
             self.doToolTempPercent(int(perc))
@@ -269,7 +273,7 @@ class controllerClass(object):
         elif val==0 and self.targetToolTemp>0:
             # toolCooling starts
             # currently, bedCooling and toolCooling use the same control to show and since they overlap, it's either this or that.
-            # uncomment the line below and the toolCooling drives the led ring temperature display
+            # uncomment the line below and the toolCooling instead of bedCooling drives the led ring temperature display
             #phase='toolCooling'
             pass
             
@@ -350,7 +354,7 @@ class controllerClass(object):
         
     
     def setStrip0(self,val):
-        # mosquitto_pub -h kranich.intern -u spy -P autan -t led/tl/set -m '{"p0":10}'
+        # mosquitto_pub -h kranich.intern -u username -P secret -t led/tl/set -m '{"p0":10}'
         msg = '{"p0":'+str(val)+'}' 
         self.echo(msg) 
         
@@ -361,7 +365,7 @@ class controllerClass(object):
 
 
     def setStrip1(self,val):
-        # mosquitto_pub -h kranich.intern -u spy -P autan -t led/tl/set -m '{"p0":10}'
+        # mosquitto_pub -h kranich.intern -u username -P secret -t led/tl/set -m '{"p0":10}'
         msg = '{"p1":'+str(val)+'}' 
         self.echo(msg) 
         client_remote.publish(client_remote_topic_control,msg,1)
@@ -460,6 +464,7 @@ class controllerClass(object):
         # or presence of people (da == someone is present)
         # those values wd need to be supplied by some other program, example:
         # tokoLights/environ {"isDuster":"ON","da":"ON","lux":17}
+        # there is a BUG somewhere as those messages do not reach their destination even when supplied, TBD
             self.setVal('isDuster',dMsg.get('isDuster'))
             self.setVal('da_jmd',dMsg.get('da'))
             self.setVal('lux',dMsg.get('lux'))
@@ -475,10 +480,11 @@ class controllerClass(object):
             dict=self.print_instance_attributes()
             
             json_string = json.dumps(dict)
-            print json_string
-            client_local.publish(client_remote_topic_pub,json_string)
+            
+            self.echo( json_string )
+            #client_local.publish(client_remote_topic_pub,json_string)
     
-    # help collect all properties
+    # help collect the properties
     def print_instance_attributes(self):
         dict={}
         for attribute, value in self.__dict__.items():
@@ -599,8 +605,7 @@ client_local.username_pw_set(user_local,pwd_local)
 client_local.connect(address_local, port_local, 60) 
 client_local.loop_start()
 
-# client_remote lauscht am remote mqtt auf evtl. Steuerungen
-# hauptsaechlich dient er zum publish der lichtSteuerungen
+# client_remote to publish led control messages
 user_remote=conf['settings']['user_remote']
 pwd_remote= conf['settings']['pwd_remote']
 address_remote=conf['settings']['address_remote']
@@ -623,6 +628,8 @@ while not client_local.connected_flag:
 while not client_remote.connected_flag: 
     time.sleep(.2)
 
+# client_shutOff is used to publish the control message which 
+# turns off the printer's power supply, if so configured
 if conf['settings']['enable_autoshutoff_printer']:
     user_shutOff=conf['settings']['user_shutoff']
     pwd_shutOff= conf['settings']['pwd_shutoff']
