@@ -59,8 +59,8 @@ class controllerClass(object):
         self.printerState="idle"
         self.tim = Timer(5, self.initialTimeout)
         self.tim.start()
-        self.version="0.1.3"
-        self.versionState="alpha"
+        self.version="0.1.4"
+        self.versionState="beta"
           
     def initVars(self):
                 
@@ -237,6 +237,9 @@ class controllerClass(object):
         if val > 0 and self.targetBedTemp==0:
             # bedHeating starts
             phase='bedHeating'
+            # in case this is a follow-up print job let's clear the shutdown timer
+            self.doQuitShutOffPrinter()
+            
         elif val==0 and self.targetBedTemp>0:
             # bedCooling starts
             phase='bedCooling'
@@ -326,7 +329,13 @@ class controllerClass(object):
             delay=int(conf['settings']['shutoff_delay_min'])*60
             self.tim = Timer(delay, self.setShutOffPrinter)
             self.tim.start()
-        
+    
+    
+    def doQuitShutOffPrinter(self):
+        # called when BedHeating starts
+        # in case this is a follow-up print job
+        self.tim = None    
+    
     def setShutOffPrinter(self):    
         # client_shutoff_topic 'OFF'
         self.echo( "ShutOffPrinter now" )
