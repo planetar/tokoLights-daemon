@@ -14,7 +14,7 @@ Configuration of the tokoLights-daemon is done in the settings.ini file which ha
 
 The script can be run from the commandline but once all has been set to fit running it as a daemon is more comfortable. Daemonizing is easy with systemctl: adapt the script path in the file tokoLights.service to your choice, copy the saved file to /etc/systemd/system/tokoLights.service, systemctl enable tokoLights.service links it as a daemon, systemctl start tokoLights starts it and systemctl status tokoLights let's you check if it all worked out.
 
-This is done in python 2.7, migration to python3 is still on the todo-list. This is alpha.
+This is done in python 2.7, migration to python3 is still on the todo-list. This is beta.
 
 There is a tokoLights-led.ino which I use for the nodemcu amica ESP8266 which runs the led-strips and to which the commands that tokoLights-daemon publishes are fine-tuned. It has it's own project page (TBD).
 There are also two things on thingiverse that are related in a way: 
