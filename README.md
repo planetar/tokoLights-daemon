@@ -16,7 +16,7 @@ The script can be run from the commandline but once all has been set to fit runn
 
 This is done in python 2.7, migration to python3 is still on the todo-list. This is beta.
 
-There is a tokoLights-led.ino which I use for the nodemcu amica ESP8266 which runs the led-strips and to which the commands that tokoLights-daemon publishes are fine-tuned. It has it's own project page (TBD).
+There is a tokoLights-led.ino which I use for the nodemcu amica ESP8266 which runs the led-strips and to which the commands that tokoLights-daemon publishes are fine-tuned. It has it's own project page (https://github.com/planetar/tokoLights-led).
 There are also two things on thingiverse that are related in a way: 
 - the enclosure for a raspberry camera with attached led-ring https://www.thingiverse.com/thing:3984749 and 
 - a rear column for the Ender 3 to attach the camera enclosure to https://www.thingiverse.com/thing:3978597
